@@ -189,13 +189,13 @@ BackingImage *direct_allocateBackingImage(NVDriver *drv, const NVSurface *surfac
     p = fmtInfo->plane;
 
     LOG("Allocating BackingImages: %p %dx%d", backingImage, surface->width, surface->height);
-    for (int i = 0; i < fmtInfo->numPlanes; i++) {
+    for (uint32_t i = 0; i < fmtInfo->numPlanes; i++) {
         alloc_image(&drv->driverContext, surface->width >> p[i].ss.x, surface->height >> p[i].ss.y,
             p[i].channelCount, 8 * fmtInfo->bppc, p[i].fourcc, &driverImages[i]);
     }
 
     LOG("Importing images");
-    for (int i = 0; i < fmtInfo->numPlanes; i++) {
+    for (uint32_t i = 0; i < fmtInfo->numPlanes; i++) {
         if (!import_to_cuda(drv, &driverImages[i], 8 * fmtInfo->bppc, p[i].channelCount, &backingImage->cudaImages[i], &backingImage->arrays[i]))
             goto bail;
     }
@@ -203,7 +203,7 @@ BackingImage *direct_allocateBackingImage(NVDriver *drv, const NVSurface *surfac
     backingImage->width = surface->width;
     backingImage->height = surface->height;
 
-    for (int i = 0; i < fmtInfo->numPlanes; i++) {
+    for (uint32_t i = 0; i < fmtInfo->numPlanes; i++) {
         backingImage->fds[i] = driverImages[i].drmFd;
         backingImage->strides[i] = driverImages[i].pitch;
         backingImage->mods[i] = driverImages[i].mods;
@@ -213,7 +213,7 @@ BackingImage *direct_allocateBackingImage(NVDriver *drv, const NVSurface *surfac
     return backingImage;
 
 bail:
-    for (int i = 0; i < fmtInfo->numPlanes; i++) {
+    for (uint32_t i = 0; i < fmtInfo->numPlanes; i++) {
         if (driverImages[i].nvFd != 0) {
             close(driverImages[i].nvFd);
         }
@@ -244,7 +244,7 @@ static void destroyBackingImage(NVDriver *drv, BackingImage *img) {
         }
     }
 
-    for (int i = 0; i < fmtInfo->numPlanes; i++) {
+    for (uint32_t i = 0; i < fmtInfo->numPlanes; i++) {
         if (img->arrays[i] != NULL) {
             CHECK_CUDA_RESULT(drv->cu->cuArrayDestroy(img->arrays[i]));
         }
@@ -287,7 +287,7 @@ static bool copyFrameToSurface(NVDriver *drv, CUdeviceptr ptr, NVSurface *surfac
     const NVFormatInfo *fmtInfo = &formatsInfo[img->format];
     uint32_t y = 0;
 
-    for (int i = 0; i < fmtInfo->numPlanes; i++) {
+    for (uint32_t i = 0; i < fmtInfo->numPlanes; i++) {
         const NVFormatPlane *p = &fmtInfo->plane[i];
         CUDA_MEMCPY2D cpy = {
             .srcMemoryType = CU_MEMORYTYPE_DEVICE,
@@ -362,7 +362,7 @@ bool direct_fillExportDescriptor(NVDriver *drv, NVSurface *surface, VADRMPRIMESu
     desc->num_layers = fmtInfo->numPlanes;
     desc->num_objects = fmtInfo->numPlanes;
 
-    for (int i = 0; i < fmtInfo->numPlanes; i++) {
+    for (uint32_t i = 0; i < fmtInfo->numPlanes; i++) {
         desc->objects[i].fd = dup(img->fds[i]);
         desc->objects[i].size = img->size[i];
         desc->objects[i].drm_format_modifier = img->mods[i];
